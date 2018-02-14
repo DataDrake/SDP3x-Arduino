@@ -43,13 +43,13 @@ bool SDP3x::WriteCommand(const uint8_t cmd[2]) {
     @returns true iff all words read and CRC passed
 */
 bool SDP3x::ReadData(uint8_t words) {
-    size_t read, i, j, byte;
+    size_t read;
     uint8_t crc = 0xFF;
-    uint8_t next;
+    uint8_t *next;
     bool failed = false;
     // Clear buffer
-    for (i = 0; i < 12; i++) {
-        this->buffer[i] = 0;
+    for (read = 0; read < 12; read++) {
+        this->buffer[read] = 0;
     }
     // Each word is two bytes plus a CRC byte, ergo 3 bytes per word
     read = Wire.requestFrom((int)this->addr, (int)(3 * words));
@@ -65,17 +65,19 @@ bool SDP3x::ReadData(uint8_t words) {
         Adapted from:
         http://www.sunshine2k.de/articles/coding/crc/understanding_crc.html
     */
-    byte = 0;
-    for (i = 0; i < read; i++) {
-        next = Wire.read();
-        // CRC
-        if ((i & 3) == 2) {
-            next << 8;
-            failed = failed || !(crc & next == next);
+    next = this->buffer;
+    for (; read > 0; read--) {
+        // Read next available byte
+        *next = Wire.read();
+        // Every third byte
+        if ((read & 3) == 1) {
+            // Check CRC byte
+            failed = failed || !(crc & *next == *next);
         } else {
-            crc                = CRC_LUT[crc ^ next];
-            this->buffer[byte] = next;
-            byte++;
+            // Update CRC
+            crc = CRC_LUT[crc ^ *next];
+            // Go to next byte
+            next++;
         }
     }
     return failed;
@@ -88,12 +90,10 @@ bool SDP3x::ReadData(uint8_t words) {
     @returns a new SDP3X as configured
 */
 SDP3x::SDP3x(const uint8_t addr, TempCompensation comp) {
-    bool failed;
     uint32_t modelNumber;
     Wire.begin();
     this->addr = addr;
-    failed     = ReadProductID(&modelNumber, NULL);
-    if (failed) {
+    if (!ReadProductID(&modelNumber, NULL)) {
         return;
     }
     switch (modelNumber) {

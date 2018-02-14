@@ -34,9 +34,6 @@ extern "C" {
 #include <WProgram.h>
 #endif
 
-/* Assertions are needed to prevent invalid configurations */
-#include <assert.h>
-
 /* Wire is the Arduino library for I2C (aka Two-Wire Interface, TWI) */
 #include <Wire.h>
 
@@ -90,14 +87,10 @@ namespace SDP3X {
         Model number;
         /* The address of this device */
         uint8_t addr;
-        /* The address mask of this device */
-        uint8_t mask;
-        /* Keeps track of which addresses are in use in order to avoid collisions */
-        static uint8_t addressesUsed;
         /* The Temperature Compensation mode to use */
         TempCompensation comp;
         /* Internal buffer to reuse for reads */
-        uint8_t buffer[12];
+        uint8_t buffer[13];
 
         /*  Send a write command
 
