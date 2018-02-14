@@ -1,5 +1,5 @@
 /*
-    SDP3x.h - Library for the SDP31 and SDP32 digital pressure sensors produced by Sensirion.
+    SDP3x.cpp - Library for the SDP31 and SDP32 digital pressure sensors produced by Sensirion.
     Created by Bryan T. Meyers, February 14, 2017.
 
     Copyright (c) 2018 Bryan T. Meyers
@@ -63,30 +63,32 @@ namespace SDP3X {
             */
             bool ReadData(uint8_t addr, uint8_t words){
                 size_t read, i, j, byte;
-                uint16_t crc = 0xFF00;
-                uint16_t next;
+                uint8_t crc = 0xFF;
+                uint8_t next;
                 bool failed = false;
-                // Each word is two bytes blus a CRC byte, ergo 3 bytes per word
+                // Each word is two bytes plus a CRC byte, ergo 3 bytes per word
                 read = Wire.requestFrom(addr, 3*words);
+
+                /*  We should have read the requested number of bytes.
+                    If not, we need to clear the bytes read anyways.
+                */
                 if read != 3*words {
-                    return false;
+                    failed = true
                 }
+                /*  Calculate CRC while reading bytes
+
+                    Adapted from: http://www.sunshine2k.de/articles/coding/crc/understanding_crc.html
+                */
                 byte = 0;
                 for( i=0; i < read; i++){
-                    next = (uint16_t)Wire.read();
+                    next = Wire.read();
                     // CRC
                     if( (i&3) == 2 ){
                         next << 8;
-                        failed = !(crc & next == next);
+                        failed ||= !(crc & next == next);
                     } else {
-                        crc |= next;
-                        for( j=0; j < 8; j++ ){
-                            crc = crc << 1;
-                            if( crc & 0x8000 == 0x8000 ) {
-                                crc &= 0x3100;
-                            }
-                        }
-                        this.buffer[byte] = (uint8_t)next;
+                        crc = CRC_LUT[crc^next];
+                        this.buffer[byte] = next;
                         byte++;
                     }
                 }
