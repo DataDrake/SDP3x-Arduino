@@ -1,7 +1,7 @@
 ---
-AccessModifierOffset: 0
+AccessModifierOffset: -4
 AlignAfterOpenBracket: true
-AlignConsecutiveAssignments: false
+AlignConsecutiveAssignments: true
 #uncomment for clang 3.9
 #AlignConsecutiveDeclarations: false
 AlignEscapedNewlinesLeft: false
@@ -20,11 +20,22 @@ AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: false
 BinPackArguments: false
 BinPackParameters: true
-# BraceWrapping: (not set since BreakBeforeBraces is not Custom)
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  SplitEmptyFunction: false
+  SplitEmptyNamespace: false
 BreakBeforeBinaryOperators: None
 # BreakAfterJavaFieldAnnotations: (not java)
 BreakBeforeBinaryOperators: None
-BreakBeforeBraces: Linux
+BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 #uncomment for clang 3.9
@@ -45,7 +56,7 @@ ForEachMacros: [ ]
 #    Priority: 1
 # IncludeIsMainRegex: (project doesn't use a main includes that can add other includes via regex)
 IndentCaseLabels: false
-IndentWidth: 8
+IndentWidth: 4
 IndentWrappedFunctionNames: false
 # JavaScriptQuotes: (not javascript)
 KeepEmptyLinesAtTheStartOfBlocks: false
@@ -53,7 +64,7 @@ Language: Cpp
 MacroBlockBegin: ''
 MacroBlockEnd:   ''
 MaxEmptyLinesToKeep: 1
-NamespaceIndentation: None
+NamespaceIndentation: All
 # ObjCBlockIndentWidth: (not objc)
 # ObjCSpaceAfterProperty: (not objc)
 # ObjCSpaceBeforeProtocolList: (not objc)

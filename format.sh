@@ -1,5 +1,5 @@
 #!/bin/bash
-clang-format -i $(find . -name '*.[ch]')
+clang-format -i $(find . -name '*.cpp' -o -name '*.h')
 
 # Check we have no typos.
 which misspell 2>/dev/null >/dev/null
