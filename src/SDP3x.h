@@ -115,6 +115,12 @@ namespace SDP3X {
         */
         SDP3x(const uint8_t addr, TempCompensation comp);
 
+        /*  Finish Initializing the sensor object
+
+            @returns true, iff everything went correctly
+        */
+        bool Begin();
+
         /*  Begin taking continuous readings
 
             @param averaging - average samples until read occurs, otherwise read last value only

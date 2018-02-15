@@ -30,11 +30,12 @@ using namespace SDP3X;
     @returns true iff all ACKs received
 */
 bool SDP3x::WriteCommand(const uint8_t cmd[2]) {
-    size_t written = 0;
+    size_t written;
+    uint8_t status;
     Wire.beginTransmission(this->addr);
     written = Wire.write(cmd, 2);
-    Wire.endTransmission();
-    return written == 2;
+    status = Wire.endTransmission();
+    return (status == 0) && (written == 2);
 }
 
 /*  Read data back from the device
@@ -46,19 +47,19 @@ bool SDP3x::ReadData(uint8_t words) {
     size_t read;
     uint8_t crc = 0xFF;
     uint8_t *next;
-    bool failed = false;
+    bool success = true;
     // Clear buffer
-    for (read = 0; read < 12; read++) {
-        this->buffer[read] = 0;
+    for (next = &this->buffer[12]; next > this->buffer; next--) {
+        *next = 0;
     }
     // Each word is two bytes plus a CRC byte, ergo 3 bytes per word
-    read = Wire.requestFrom((int)this->addr, (int)(3 * words));
+    read = Wire.requestFrom(this->addr, (uint8_t)(words*3));
 
     /*  We should have read the requested number of bytes.
         If not, we need to clear the bytes read anyways.
     */
     if (read != 3 * words) {
-        failed = true;
+        success = false;
     }
     /*  Calculate CRC while reading bytes
 
@@ -70,9 +71,10 @@ bool SDP3x::ReadData(uint8_t words) {
         // Read next available byte
         *next = Wire.read();
         // Every third byte
-        if ((read & 3) == 1) {
+        if ((read % 3) == 1) {
             // Check CRC byte
-            failed = failed || !(crc & *next == *next);
+            success = success && (crc == *next);
+            crc = 0xFF;
         } else {
             // Update CRC
             crc = CRC_LUT[crc ^ *next];
@@ -80,7 +82,7 @@ bool SDP3x::ReadData(uint8_t words) {
             next++;
         }
     }
-    return failed;
+    return success;
 }
 
 /*  Constructor
@@ -90,25 +92,32 @@ bool SDP3x::ReadData(uint8_t words) {
     @returns a new SDP3X as configured
 */
 SDP3x::SDP3x(const uint8_t addr, TempCompensation comp) {
-    uint32_t modelNumber;
-    Wire.begin();
     this->addr = addr;
+    this->comp = comp;
+}
+
+/*  Finish Initializing the sensor object
+
+    @returns true, iff everything went correctly
+*/
+bool SDP3x::Begin() {
+    uint32_t modelNumber;
     if (!ReadProductID(&modelNumber, NULL)) {
-        return;
+        return false;
     }
     switch (modelNumber) {
     case SDP31_PID:
         this->number = SDP31;
-        break;
+        return true;
     case SDP32_PID:
         this->number = SDP32;
-        break;
+        return true;
     default:
         /* do nothing for now */
-        break;
+        return false;
     }
-    this->comp = comp;
 }
+
 
 /*  Begin taking continuous readings
 
@@ -195,15 +204,24 @@ bool SDP3x::GetMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale) {
     switch (words) {
     case 3:
         if (scale != NULL) {
-            *scale = (uint16_t) * (this->buffer + 4);
+            *scale <<= 8;
+            *scale |= (int16_t) this->buffer[4];
+            *scale <<= 8;
+            *scale |= (int16_t) this->buffer[5];
         }
     case 2:
         if (temp != NULL) {
-            *temp = (uint16_t) * (this->buffer + 2);
+            *temp <<= 8;
+            *temp |= (int16_t) this->buffer[2];
+            *temp <<= 8;
+            *temp |= (int16_t) this->buffer[3];
         }
     case 1:
         if (pressure != NULL) {
-            *pressure = (uint16_t) * (this->buffer);
+            *pressure <<= 8;
+            *pressure |= (int16_t) this->buffer[0];
+            *pressure <<= 8;
+            *pressure |= (int16_t) this->buffer[1];
         }
     }
     return true;
@@ -238,16 +256,23 @@ bool SDP3x::ReadProductID(uint32_t *pid, uint64_t *serial) {
         | Byte  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
         | Value | pid           | serial                          |
     */
+
     switch (words) {
     case 4:
         // "Parse" serial number
         if (serial != NULL) {
-            *serial = (uint64_t) * (this->buffer + 4);
+            for( words=0; words < 8; words++) {
+                *serial <<= 8;
+                *serial |= (uint64_t)this->buffer[words+4];
+            }
         }
     case 2:
         // "Parse" product identifer
         if (pid != NULL) {
-            *pid = (uint32_t) * (this->buffer);
+            for( words=0; words < 4; words++) {
+                *pid <<= 8;
+                *pid |= (uint32_t)this->buffer[words];
+            }
         }
     }
     return true;
@@ -259,7 +284,15 @@ bool SDP3x::ReadProductID(uint32_t *pid, uint64_t *serial) {
     @returns true, iff everything went correctly
 */
 bool SDP3x::Reset() {
-    return WriteCommand(SoftReset);
+    size_t written = 0;
+    uint8_t status;
+    Wire.beginTransmission(SoftReset[0]);
+    written = Wire.write(SoftReset[1]);
+    status = Wire.endTransmission();
+    if( status != 0 ) {
+        return false;
+    }
+    return written == 1;
 }
 
 /*  Get the Pressure Scale for this sensor
