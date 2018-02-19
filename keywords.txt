@@ -1,0 +1,20 @@
+# Keywords
+SDP3x	KEYWORD1
+
+#Functions
+begin	KEYWORD2
+startContinuous	KEYWORD2
+stopContinuous	KEYWORD2
+triggerMeasurement	KEYWORD2
+readMeasurement	KEYWORD2
+readProductID	KEYWORD2
+reset	KEYWORD2
+getPressureScale	KEYWORD2
+getTemperatureScale	KEYWORD2
+
+#Constants
+Address1	CONSTANT1
+Address2	CONSTANT1
+Address3	CONSTANT1
+MassFlow	CONSTANT1
+DiffPressure	CONSTANT1

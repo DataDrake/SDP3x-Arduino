@@ -97,14 +97,14 @@ namespace SDP3X {
             @param cmd - the two byte command to send
             @return true iff all ACKs received
         */
-        bool WriteCommand(const uint8_t cmd[2]);
+        bool writeCommand(const uint8_t cmd[2]);
 
         /*  Read data back from the device
 
             @param words - the number of words to read
             @returns true iff all words read and CRC passed
         */
-        bool ReadData(uint8_t words);
+        bool readData(uint8_t words);
 
     public:
         /*  Constructor
@@ -119,40 +119,44 @@ namespace SDP3X {
 
             @returns true, iff everything went correctly
         */
-        bool Begin();
+        bool begin();
 
         /*  Begin taking continuous readings
 
             @param averaging - average samples until read occurs, otherwise read last value only
             @returns true, iff everything went correctly
         */
-        bool StartContinuous(bool averaging);
+        bool startContinuous(bool averaging);
 
         /*  Disable continuous measurements
 
             This may be useful to conserve power when sampling all the time is no longer necessary.
             @returns true, iff everything went correctly
         */
-        bool StopContinuous();
+        bool stopContinuous();
 
-        /*  Start a one-shot reading
+        /*  Start a one-shot reading.
 
-            @param averaging - average samples until read occurs, otherwise read last value only
+            Clock-stretching is used to delay the a Read response to the Master when a new reading
+            is not yet available (ie. blocking read). If left disabled, any reading taken less than
+            45ms after a trigger will fail.
+
+            @param stretching - enable clock stretching
             @returns true, iff everything went correctly
         */
-        bool TriggerMeasurement(bool stretching);
+        bool triggerMeasurement(bool stretching);
 
         /*  Get a pending reading.
 
             This may be used periodically or in a call-back when monitoring interrupts.
 
             Both "temp" and "scale" should be left NULL if not used. This will reduce read times.
-            @param pressure - a pointer to store the raw pressue value
+            @param pressure - a pointer to store the raw pressur value
             @param temp  - a pointer to store the raw temperature value
             @param scale - a pointer to store the pressure scaling factor
             @returns true, iff everything went correctly
         */
-        bool GetMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale);
+        bool readMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale);
 
         /*  Read back the sensor's internal information
 
@@ -162,26 +166,26 @@ namespace SDP3X {
             @param serial  - if not null, a pointer to store the 64-bit manufacturer serial number
             @returns true, iff everything went correctly
         */
-        bool ReadProductID(uint32_t *pid, uint64_t *serial);
+        bool readProductID(uint32_t *pid, uint64_t *serial);
 
         /*  Reset the device to default settings
 
             WARNING: This will reset all other I2C devices that support it.
             @returns true, iff everything went correctly
         */
-        bool Reset();
+        bool reset();
 
         /*  Get the Pressure Scale for this sensor
 
             @returns scale in units of 1/Pa
         */
-        uint8_t GetPressureScale();
+        uint8_t getPressureScale();
 
         /*  Get the Temperature Scale for this sensor
 
             @returns scale in units of 1/C
         */
-        uint8_t GetTemperatureScale();
+        uint8_t getTemperatureScale();
     };
 
     /*  CRC-8 Lookup Table

@@ -29,7 +29,7 @@ using namespace SDP3X;
     @param cmd - the two byte command to send
     @returns true iff all ACKs received
 */
-bool SDP3x::WriteCommand(const uint8_t cmd[2]) {
+bool SDP3x::writeCommand(const uint8_t cmd[2]) {
     size_t written;
     uint8_t status;
     Wire.beginTransmission(this->addr);
@@ -43,7 +43,7 @@ bool SDP3x::WriteCommand(const uint8_t cmd[2]) {
     @param words - the number of words to read
     @returns true iff all words read and CRC passed
 */
-bool SDP3x::ReadData(uint8_t words) {
+bool SDP3x::readData(uint8_t words) {
     size_t read;
     uint8_t crc = 0xFF;
     uint8_t *next;
@@ -100,9 +100,9 @@ SDP3x::SDP3x(const uint8_t addr, TempCompensation comp) {
 
     @returns true, iff everything went correctly
 */
-bool SDP3x::Begin() {
+bool SDP3x::begin() {
     uint32_t modelNumber;
-    if (!ReadProductID(&modelNumber, NULL)) {
+    if (!readProductID(&modelNumber, NULL)) {
         return false;
     }
     switch (modelNumber) {
@@ -123,19 +123,19 @@ bool SDP3x::Begin() {
     @param averaging - average samples until read occurs, otherwise read last value only
     @returns true, iff everything went correctly
 */
-bool SDP3x::StartContinuous(bool averaging) {
+bool SDP3x::startContinuous(bool averaging) {
     switch (this->comp) {
     case MassFlow:
         if (averaging) {
-            return WriteCommand(StartContMassFlowAvg);
+            return writeCommand(StartContMassFlowAvg);
         } else {
-            return WriteCommand(StartContMassFlow);
+            return writeCommand(StartContMassFlow);
         }
     case DiffPressure:
         if (averaging) {
-            return WriteCommand(StartContDiffPressureAvg);
+            return writeCommand(StartContDiffPressureAvg);
         } else {
-            return WriteCommand(StartContDiffPressure);
+            return writeCommand(StartContDiffPressure);
         }
     default:
         return false;
@@ -147,8 +147,8 @@ bool SDP3x::StartContinuous(bool averaging) {
     This may be useful to conserve power when sampling all the time is no longer necessary.
     @returns true, iff everything went correctly
 */
-bool SDP3x::StopContinuous() {
-    return WriteCommand(StopCont);
+bool SDP3x::stopContinuous() {
+    return writeCommand(StopCont);
 }
 
 /*  Start a one-shot reading
@@ -156,19 +156,19 @@ bool SDP3x::StopContinuous() {
     @param averaging - average samples until read occurs, otherwise read last value only
     @returns true, iff everything went correctly
 */
-bool SDP3x::TriggerMeasurement(bool stretching) {
+bool SDP3x::triggerMeasurement(bool stretching) {
     switch (this->comp) {
     case MassFlow:
         if (stretching) {
-            return WriteCommand(TrigMassFlowStretch);
+            return writeCommand(TrigMassFlowStretch);
         } else {
-            return WriteCommand(TrigMassFlow);
+            return writeCommand(TrigMassFlow);
         }
     case DiffPressure:
         if (stretching) {
-            return WriteCommand(TrigDiffPressureStretch);
+            return writeCommand(TrigDiffPressureStretch);
         } else {
-            return WriteCommand(TrigDiffPressure);
+            return writeCommand(TrigDiffPressure);
         }
     default:
         return false;
@@ -186,14 +186,14 @@ bool SDP3x::TriggerMeasurement(bool stretching) {
     @returns the raw pressure reading (no scaling)
     @returns true, iff everything went correctly
 */
-bool SDP3x::GetMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale) {
+bool SDP3x::readMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale) {
     uint8_t words = 1;
     if (scale != NULL) {
         words = 3;
     } else if (temp != NULL) {
         words = 2;
     }
-    if (!ReadData(words)) {
+    if (!readData(words)) {
         return false;
     }
     /*  Data Format:
@@ -234,30 +234,29 @@ bool SDP3x::GetMeasurement(int16_t *pressure, int16_t *temp, int16_t *scale) {
     @param serial  - if not null, a pointer to store the 64-bit manufacturer serial number
     @returns true, iff everything went correctly
 */
-bool SDP3x::ReadProductID(uint32_t *pid, uint64_t *serial) {
+bool SDP3x::readProductID(uint32_t *pid, uint64_t *serial) {
     uint8_t words = 2;
     if (serial != NULL) {
-        words = 4;
+        words = 6;
     }
     // Send first command
-    if (!WriteCommand(ReadInfo1)) {
+    if (!writeCommand(ReadInfo1)) {
         return false;
     }
     // Send decond command
-    if (!WriteCommand(ReadInfo2)) {
+    if (!writeCommand(ReadInfo2)) {
         return false;
     }
     // Read back required data
-    if (!ReadData(words)) {
+    if (!readData(words)) {
         return false;
     }
     /*  Data Format:
         | Byte  | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
         | Value | pid           | serial                          |
     */
-
     switch (words) {
-    case 4:
+    case 6:
         // "Parse" serial number
         if (serial != NULL) {
             for (words = 0; words < 8; words++) {
@@ -282,23 +281,20 @@ bool SDP3x::ReadProductID(uint32_t *pid, uint64_t *serial) {
     WARNING: This will reset all other I2C devices that support it.
     @returns true, iff everything went correctly
 */
-bool SDP3x::Reset() {
+bool SDP3x::reset() {
     size_t written = 0;
     uint8_t status;
     Wire.beginTransmission(SoftReset[0]);
     written = Wire.write(SoftReset[1]);
     status  = Wire.endTransmission();
-    if (status != 0) {
-        return false;
-    }
-    return written == 1;
+    return (written == 1) && (status == 0);
 }
 
 /*  Get the Pressure Scale for this sensor
 
     @returns scale in units of 1/Pa
 */
-uint8_t SDP3x::GetPressureScale() {
+uint8_t SDP3x::getPressureScale() {
     switch (this->number) {
     case SDP31:
         return SDP31_DiffScale;
@@ -313,6 +309,6 @@ uint8_t SDP3x::GetPressureScale() {
 
     @returns scale in units of 1/C
 */
-uint8_t SDP3x::GetTemperatureScale() {
+uint8_t SDP3x::getTemperatureScale() {
     return SDP3X_TempScale;
 }
