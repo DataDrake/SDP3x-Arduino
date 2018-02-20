@@ -36,11 +36,11 @@ Just drop `SDP3x.h` and `SDP3x.cpp` into your own project, and off you go.
 
 using namespace SDP3X;
 
-SDP3x pressure(Address1,MassFlow);
+SDP3x sensor(Address1,MassFlow);
 
-setup() {
+void setup() {
   Wire.begin();
-  pressure.begin();
+  sensor.begin();
 }
 ```
 
@@ -51,20 +51,20 @@ setup() {
 
 using namespace SDP3X;
 
-SDP3x pressure(Address1,MassFlow);
+SDP3x sensor(Address1,MassFlow);
 
-setup() {
+void setup() {
   Wire.begin();
-  pressure.begin();
-  pressure.startContinuous(false);
+  sensor.begin();
+  sensor.startContinuous(false);
 }
 
 bool status;
 int16_t pressure;
 
-loop() {
+void loop() {
   delay(1000);
-  status = pressure.ReadMeasurement(&pressure, NULL, NULL);
+  status = sensor.readMeasurement(&pressure, NULL, NULL);
 }
 ```
 
