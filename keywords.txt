@@ -13,8 +13,8 @@ getPressureScale	KEYWORD2
 getTemperatureScale	KEYWORD2
 
 #Constants
-Address1	CONSTANT1
-Address2	CONSTANT1
-Address3	CONSTANT1
-MassFlow	CONSTANT1
-DiffPressure	CONSTANT1
+Address1	LITERAL1
+Address2	LITERAL1
+Address3	LITERAL1
+MassFlow	LITERAL1
+DiffPressure	LITERAL1
